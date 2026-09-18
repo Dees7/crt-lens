@@ -1,0 +1,28 @@
+{
+  "compilerOptions": {
+    // target — ES2022: esbuild в текущей vite про ES2024 ещё не знает и ругается
+    // на каждый файл. lib при этом обязан быть ES2024 — типы mobx 6.15 ссылаются
+    // на ReadonlySetLike, который появился только там.
+    "target": "ES2022",
+    "module": "ESNext",
+    "moduleResolution": "Bundler",
+    "lib": ["ES2024", "DOM", "DOM.Iterable"],
+    "jsx": "react-jsx",
+    "strict": true,
+    "noImplicitAny": true,
+    "noImplicitReturns": true,
+    "isolatedModules": true,
+    "esModuleInterop": true,
+    "useDefineForClassFields": true,
+    "skipLibCheck": true,
+    "noEmit": true,
+    "types": ["node"],
+    "paths": {
+      // @freelensapp/extensions 2.x на npm не опубликован (последняя там 1.10.3),
+      // поэтому типы берём из соседнего чекаута форка — так же делает его
+      // собственная фикстура расширения.
+      "@freelensapp/extensions": ["../freelens/packages/extensions/dist/extension-api.d.ts"]
+    }
+  },
+  "include": ["src/**/*"]
+}
