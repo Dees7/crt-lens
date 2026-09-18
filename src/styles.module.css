@@ -1,0 +1,82 @@
+/*
+ * Свои стили расширения.
+ *
+ * В Freelens 2.x хост больше не раздаёт flexbox.scss, поэтому классы вида
+ * `flex column gaps` ничего не делают — раскладку пишем сами. Хостовые классы
+ * (.title, .arrow, .StatusBrick, .Icon) остаются: они публичные, их не трогаем.
+ *
+ * CSS-модуль: имена классов на сборке мангле́нные, с хостом не столкнутся.
+ * Хост сам подхватывает соседний с renderer.js style.css.
+ */
+
+.row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.editor {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.textarea {
+  width: 100%;
+  min-height: 360px;
+  /* цвета берём из темы, чтобы блок не светился белым на тёмной */
+  background: var(--inputControlBackground);
+  color: var(--textColorPrimary);
+  caret-color: var(--textColorPrimary);
+  border: 1px solid var(--inputControlBorder);
+  border-radius: var(--border-radius);
+  padding: 8px;
+  font-family: var(--font-monospace);
+  font-size: var(--font-size-small);
+  line-height: 1.4;
+  white-space: pre;
+  overflow-wrap: normal;
+  overflow-x: auto;
+  resize: vertical;
+  outline: none;
+  transition: border-color 0.1s;
+}
+
+.textarea:focus {
+  border-color: var(--colorInfo);
+}
+
+/* тело диалога подтверждения: подпись, поле ввода и превью команды столбиком */
+.dialog {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  /* диалог узкий, а команды длинные — иначе превью растягивает его во всю ширину окна */
+  max-width: 560px;
+}
+
+.preview {
+  color: var(--textColorSecondary);
+  font-size: var(--font-size-small);
+  font-family: var(--font-monospace);
+  word-break: break-all;
+  white-space: pre-wrap;
+}
+
+.mono {
+  font-family: var(--font-monospace);
+  font-size: var(--font-size-small);
+  color: var(--textColorAccent);
+}
+
+.hint {
+  color: var(--textColorSecondary);
+}
+
+.ok {
+  color: var(--colorOk);
+}
+
+.error {
+  color: var(--colorError);
+}

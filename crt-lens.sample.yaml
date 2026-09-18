@@ -1,0 +1,209 @@
+# Настройки расширения crt-lens: кнопки-плагины в меню объектов кластера.
+#
+# Это пример. Рабочий файл — ~/.freelens/crt-lens.yaml, и кнопка «Дефолты»
+# в настройках подставляет в редактор ровно этот текст. Всё, чего в файле нет,
+# берётся из встроенных значений, так что можно оставить только свои кнопки.
+#
+# Каждая кнопка в buttons — отдельный пункт меню и отдельная иконка в тулбаре
+# деталей. type: local — терминал в доке Freelens, ext — внешний терминал по
+# пресету из terminals, url — ссылка в браузере, logs — штатный просмотрщик
+# логов в доке (cmd и url ему не нужны, scopes — только kind'ы с подами).
+# Старый type: crt читается как ext + terminal: crt, log — как logs.
+#
+# terminals — пресеты внешних терминалов: argv по платформам, job (posix | cmd |
+# none) задаёт формат файла-задания и стиль кавычек. Подстановки в argv:
+# {{job}}, {{title}}, {{command}}, {{command_quoted}}. Пресеты crt, terminal,
+# iterm, kitty, wezterm, ghostty, alacritty, wt, cmd, powershell и gitbash
+# встроены — перечислять их здесь не нужно, секция terminals только добавляет
+# свои и перекрывает встроенные по имени.
+# Все встроенные пресеты целиком, с разбором полей, выписаны в соседнем файле
+# terminals.sample.yaml — оттуда запись копируется сюда и правится под себя.
+# Пресет crt открывает вкладку SecureCRT — ему нужна разовая ручная установка
+# сессии и скрипта, см. examples/securecrt/README.md.
+#
+# vars — таблица переменных под масками: сюда складываются идентификаторы
+# окружений для ссылок. Значение ключа берётся из самой специфичной записи.
+#
+# column: true — кнопка ещё и колонкой в списке объектов, по колонке на каждый
+# kind из scopes. Новая колонка появляется после Cmd+R.
+#
+# include_stopped: true — показывать кнопку и на остановленном поде или
+# контейнере. По умолчанию кнопка есть только у живых (в мёртвый под шеллом
+# не зайти), но логи упавшего пода и завершённой джобы как раз и нужны.
+#
+# scopes: containers (пункт с подменю контейнеров), pods, nodes, namespaces
+# либо kind — Deployment, apps/v1:Deployment. Новый kind виден после Cmd+R.
+#
+# Маски context / namespace / pod / container / node / object (glob: * и ?)
+# стоят и на кнопке, и на правиле, и на записи vars. Значением может быть
+# список — это «или»: namespace: [prod, temporal]. object — имя выделенного
+# объекта, то же, что в {{name}}. Кнопка видна, когда совпали все её маски;
+# кнопки с одним id схлопываются в одну — выигрывает самая специфичная, при
+# равенстве нижняя в файле. Внутри кнопки правила соревнуются так же, но при
+# равенстве выигрывает верхнее.
+#
+# cmd / shell / image / url / query / terminal подбираются независимо:
+# правило → кнопка → дефолт. Дефолтная команда есть только у containers
+# (pod_command) и nodes (node_command) — остальным scope'ам cmd задаётся сам.
+#
+# Подстановки (регистр не важен): kubectl, kubeconfig, context, namespace,
+# pod, container, node, name, kind, api_version, button, node_namespace,
+# node_pod, image, shell, shell_quoted, overrides, platform, from, to,
+# query, query_encoded плюс всё из vars. shell_quoted и overrides уже
+# экранированы для шелла — в кавычки их брать не надо.
+
+kubectl_path: kubectl
+
+pod_tab_title: "{{pod}}/{{container}}"
+node_tab_title: "{{node}}"
+tab_title_max: 32
+
+default_shell: "clear; (bash || ash || sh)"
+# тот же образ, что у штатного node shell в Freelens
+default_node_image: docker.io/alpine:3.13
+node_namespace: kube-system
+
+# Пресет для кнопок ext без своего terminal; пусто — автоопределение.
+default_terminal: ""
+
+# Команды по умолчанию для scope containers и nodes. Раскомментировать стоит
+# только чтобы поменять: без них работают ровно эти строки.
+#
+# pod_command: '{{kubectl}} --kubeconfig "{{kubeconfig}}" --context {{context}} exec -i -t -n {{namespace}} {{pod}} -c {{container}} -- sh -c {{shell_quoted}}'
+# node_command: '{{kubectl}} --kubeconfig "{{kubeconfig}}" --context {{context}} -n {{node_namespace}} run {{node_pod}} --rm -it --restart=Never --image {{image}} --overrides {{overrides}}'
+
+# Таблица окружений: идентификаторы, из которых кнопки собирают ссылки.
+# Запись на маске "*" — общая для всех кластеров, ниже её точечно перекрывают
+# записи на более узкой маске: совпали обе — выигрывает самая специфичная,
+# и только по тем ключам, которые она задала.
+vars:
+  - context: "*"
+    set:
+      logs_base: https://logs.example.com
+      logs_project: demo
+      logs_service: my-service
+      dash_base: https://grafana.example.com
+      dash_id: kubernetes-pods
+      dash_cluster: dev
+
+  - context: "*-prod-*"
+    set:
+      logs_project: prod
+      dash_cluster: prod
+
+buttons:
+  # Шелл в контейнер и на ноду через внешний терминал.
+  - id: shell
+    name: SecureCRT
+    type: ext
+    terminal: crt
+    scopes: [containers, nodes]
+    column: false
+    include_stopped: false
+    confirm: false
+    rules:
+      - pod: "deploy*"
+        shell: bash
+      - namespace: prod
+        shell: "clear; (bash || ash || sh)"
+
+  # Логи во внешней системе. Пример под систему, которая принимает селектор
+  # в query-параметре; под свою правится url и query.
+  - id: logs
+    name: Logs
+    type: url
+    # в material-наборе графика нет — берём встроенную иконку
+    icon: "svg:chart"
+    # containers + pods: пункт открывает логи пода целиком, подменю — по контейнерам
+    scopes: [containers, pods, nodes]
+    column: true
+    # логи переживают под: упавший под и завершённая джоба тоже интересны
+    include_stopped: true
+    confirm: false
+    # база — под целиком; правила ниже уточняют её для контейнера и для ноды.
+    # Маска container: "*" совпадает только там, где контейнер вообще есть, —
+    # это и есть способ сказать «а вот для контейнера селектор другой».
+    query: '{project = "{{logs_project}}", service = "{{logs_service}}", pod = "{{pod}}"}'
+    url: "{{logs_base}}/logs?query={{query_encoded}}&from={{from}}&to={{to}}"
+    rules:
+      - container: "*"
+        query: '{project = "{{logs_project}}", service = "{{logs_service}}", pod = "{{pod}}", container = "{{container}}"}'
+      # у ноды нет ни пода, ни контейнера — селектор по метке ноды
+      - node: "*"
+        query: '{project = "{{logs_project}}", service = "{{logs_service}}", node = "{{node}}"}'
+
+  # Логи в доке Freelens: тот же просмотрщик, что у штатной кнопки Logs пода,
+  # но кнопка есть и на воркоаде. Поды находятся по владельцу (у Deployment —
+  # через его ReplicaSet), таб открывается на живом поде, а соседние поды и
+  # контейнеры переключаются селекторами самого таба. Ни cmd, ни url такой
+  # кнопке не нужны — цель она берёт из объекта.
+  - id: dock-logs
+    name: Логи в доке
+    type: logs
+    icon: subject
+    scopes: [containers, pods, Deployment, StatefulSet, DaemonSet, Job]
+    column: true
+    include_stopped: true
+    confirm: false
+    rules: []
+
+  # Дашборд пода. Пример под Grafana; под свою систему правится один url.
+  - id: mon
+    name: Dashboard
+    type: url
+    icon: insights
+    scopes: [pods]
+    column: true
+    include_stopped: true
+    confirm: false
+    url: "{{dash_base}}/d/{{dash_id}}?var-cluster={{dash_cluster}}&var-namespace={{namespace}}&var-pod={{pod}}&from=now-1d&to=now"
+    rules: []
+
+  # kubectl debug: эфемерный контейнер с сетевыми утилитами рядом с целевым.
+  - id: debug
+    name: Debug
+    type: ext
+    terminal: ""
+    icon: bug_report
+    scopes: [containers]
+    column: false
+    include_stopped: false
+    confirm: true
+    title: "dbg {{pod}}/{{name}}"
+    cmd: '{{kubectl}} --kubeconfig "{{kubeconfig}}" --context {{context}} debug --profile=general -it -n {{namespace}} {{pod}} --target={{name}} --image={{image}} --share-processes -- {{shell}}'
+    image: praqma/network-multitool:latest
+    shell: bash
+    rules:
+      # в проде образ полегче и без лишних утилит
+      - context: "*-prod-*"
+        image: busybox:1.36
+        shell: sh
+
+  # Логи всех подов воркоада в доке — с фильтром, который спрашивают перед
+  # запуском. input открывает диалог с полем; ответ подставляется как {{input}}
+  # (он же {{userinput}}), а {{input_quoted}} — то же в кавычках нужного шелла.
+  # Диалог пересобирает команду на каждое нажатие клавиши, так что видно, что
+  # именно уедет в терминал; Enter в поле — то же, что нажать «Запустить».
+  # Написали в поле "| grep -i error" — получите только строки с ошибками.
+  - id: wl-logs
+    name: Логи всех подов
+    type: local
+    icon: article
+    scopes: [Deployment, StatefulSet, DaemonSet, Job]
+    column: true
+    # логи нужны и у того, что уже не бежит
+    include_stopped: true
+    title: "logs {{name}}"
+    input:
+      label: "Фильтр — дописывается в конец команды"
+      # поле открывается уже заполненным: обычный запуск — это Enter, править
+      # приходится, только когда нужен другой фильтр. default — такой же шаблон,
+      # как cmd, и знает про все переменные
+      default: "| grep -i -E 'error|warn'"
+      # required: true — пустой ответ не принимать
+    cmd: >-
+      {{kubectl}} --kubeconfig "{{kubeconfig}}" --context {{context}}
+      -n {{namespace}} logs {{kind}}/{{name}}
+      --all-pods --all-containers --ignore-errors --prefix
+      --tail=200 --max-log-requests=100 -f {{input}}
+    rules: []

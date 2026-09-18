@@ -1,0 +1,161 @@
+# Встроенные пресеты внешних терминалов — как есть, в том виде, в каком их
+# держит расширение (src/terminals-default.ts).
+#
+# Этот файл ничего не включает и не выключает: пресеты работают и без него.
+# Он нужен, чтобы посмотреть, как пресет устроен, и скопировать похожий к себе
+# в ~/.freelens/crt-lens.yaml. Секция terminals из файла настроек добавляется
+# к этой таблице и перекрывает записи по имени: одноимённый пресет заменяет
+# встроенный целиком, а не дополняет его по платформам.
+#
+# Пресет — это данные, а не код. Расширение умеет с ним ровно три вещи:
+# написать файл задания, развернуть подстановки в argv и запустить процесс.
+#
+#   job       posix | cmd | none — формат файла задания и стиль кавычек.
+#             posix — sh-скрипт и кавычки '…', cmd — .cmd-файл и кавычки "…"
+#             с удвоением % , none — задание не пишется, команда уезжает
+#             прямо в argv. Секция платформы может перекрыть job своим
+#             (так сделано у gitbash: Windows, но задание posix).
+#   darwin    \
+#   win32      > секции по платформам; нет секции под текущую — на этой машине
+#   linux     /  кнопки с этим пресетом не будет.
+#   argv      команда запуска: argv[0] — бинарь, дальше аргументы.
+#   activate  необязательный второй запуск: чем поднять окно, если сам
+#             терминал этого не делает.
+#
+# Подстановки в argv и в activate:
+#
+#   {{job}}             путь к файлу задания
+#   {{title}}           заголовок вкладки (уже обрезанный по tab_title_max)
+#   {{command}}         сама команда, как есть
+#   {{command_quoted}}  она же, заэкранированная под шелл этого пресета
+#
+# Автоопределение (когда у кнопки нет terminal и не задан default_terminal)
+# идёт в этом порядке и берёт первый пресет, у которого есть секция под
+# текущую платформу и существует бинарь из argv[0]:
+#
+#   crt, wt, iterm, kitty, wezterm, ghostty, alacritty, terminal, gitbash, cmd
+#
+# Явно названный пресет на наличие бинаря не проверяется — терминал мог быть
+# поставлен в нестандартное место.
+
+terminals:
+  # SecureCRT. Команда доезжает не аргументами, а через файл задания: вкладка
+  # находит его по своему заголовку (/N {{title}}), поэтому задание пишется
+  # всегда, хотя в argv его и нет. Про ручную установку сессии и скрипта —
+  # examples/securecrt/README.md.
+  crt:
+    job: posix
+    darwin:
+      argv:
+        - /Applications/SecureCRT.app/Contents/MacOS/SecureCRT
+        - /T
+        - /N
+        - "{{title}}"
+        - /S
+        - crt-lens
+      activate:
+        - /usr/bin/osascript
+        - -e
+        - tell application id "com.vandyke.securecrt" to activate
+    win32:
+      argv:
+        - C:\Program Files\VanDyke Software\SecureCRT\SecureCRT.exe
+        - /T
+        - /N
+        - "{{title}}"
+        - /S
+        - crt-lens
+      job: cmd
+    linux:
+      argv: [/usr/bin/SecureCRT, /T, /N, "{{title}}", /S, crt-lens]
+
+  # Штатный Terminal.app: другого способа открыть вкладку, кроме AppleScript, нет.
+  terminal:
+    job: posix
+    darwin:
+      argv:
+        - /usr/bin/osascript
+        - -e
+        - tell application "Terminal" to do script "{{job}}"
+        - -e
+        - tell application "Terminal" to activate
+
+  iterm:
+    job: posix
+    darwin:
+      argv:
+        - /usr/bin/osascript
+        - -e
+        - tell application "iTerm" to create window with default profile command "{{job}}"
+        - -e
+        - tell application "iTerm" to activate
+
+  kitty:
+    job: posix
+    darwin:
+      argv:
+        - /Applications/kitty.app/Contents/MacOS/kitty
+        - --title
+        - "{{title}}"
+        - /bin/bash
+        - "{{job}}"
+    linux:
+      argv: [kitty, --title, "{{title}}", /bin/bash, "{{job}}"]
+
+  wezterm:
+    job: posix
+    darwin:
+      argv:
+        - /Applications/WezTerm.app/Contents/MacOS/wezterm
+        - start
+        - --
+        - /bin/bash
+        - "{{job}}"
+    linux:
+      argv: [wezterm, start, --, /bin/bash, "{{job}}"]
+
+  ghostty:
+    job: posix
+    darwin:
+      argv:
+        - /Applications/Ghostty.app/Contents/MacOS/ghostty
+        - -e
+        - /bin/bash
+        - "{{job}}"
+    linux:
+      argv: [ghostty, -e, /bin/bash, "{{job}}"]
+
+  alacritty:
+    job: posix
+    darwin:
+      argv:
+        - /Applications/Alacritty.app/Contents/MacOS/alacritty
+        - --title
+        - "{{title}}"
+        - -e
+        - /bin/bash
+        - "{{job}}"
+    linux:
+      argv: [alacritty, --title, "{{title}}", -e, /bin/bash, "{{job}}"]
+
+  # Windows Terminal: `-w 0` подселяет вкладку в уже открытое окно.
+  wt:
+    job: cmd
+    win32:
+      argv: [wt.exe, -w, "0", nt, --title, "{{title}}", cmd.exe, /k, "{{job}}"]
+
+  cmd:
+    job: cmd
+    win32:
+      argv: [cmd.exe, /c, start, "{{title}}", cmd.exe, /k, "{{job}}"]
+
+  powershell:
+    job: cmd
+    win32:
+      argv: [powershell.exe, -NoExit, -Command, "& '{{job}}'"]
+
+  # Git Bash — единственный на Windows, кому нужно posix-задание.
+  gitbash:
+    win32:
+      argv: [C:\Program Files\Git\git-bash.exe, "{{job}}"]
+      job: posix
