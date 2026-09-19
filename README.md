@@ -79,10 +79,10 @@ Then, with Freelens running:
 5. Make sure the extension is enabled, then restart Freelens (`Cmd+R` / `Ctrl+R` in the window is
    usually enough).
 
-For example, the current build for Freelens 1.x:
+The asset link always has the same shape, so you can also type it by hand:
 
 ```text
-https://github.com/Dees7/crt-lens/releases/download/v1.0.0/crt-lens-1.0.0.tgz
+https://github.com/Dees7/crt-lens/releases/download/<tag>/crt-lens-<version>.tgz
 ```
 
 Downloading the `.tgz` and dragging it onto the Extensions view works just as well.
