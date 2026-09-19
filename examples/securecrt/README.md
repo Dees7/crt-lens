@@ -1,71 +1,71 @@
-# SecureCRT: разовая установка
+# SecureCRT: one-time setup
 
-Пресет `crt` в настройках crt-lens открывает вкладку SecureCRT. Само расширение
-про SecureCRT ничего не знает — оно просто пишет файл задания и запускает бинарь.
-Команду в уже открытое приложение доставляет сессия-обёртка, которую надо
-поставить один раз руками.
+> 🇷🇺 Русская версия — [README.ru.md](README.ru.md).
 
-Быстрый путь: в `Preferences → Extensions → crt-lens` нажать **«Разложить примеры
-SecureCRT»** — файлы лягут в `~/.freelens/crt-lens/securecrt/`, а путь к скрипту
-в сессии будет уже подставлен. Останется шаг 2.
+The `crt` preset in crt-lens opens a SecureCRT tab. The extension itself knows nothing about
+SecureCRT — it just writes a job file and launches the binary. What delivers the command into the
+already running application is a wrapper session, and that has to be installed once, by hand.
 
-## 1. Скрипт вкладки
+The fast way: in `Preferences → Extensions → crt-lens` press **`Разложить примеры SecureCRT`**
+("write out the SecureCRT examples") — the files land in `~/.freelens/crt-lens/securecrt/` with the
+script path already substituted into the session. Only step 2 is left.
 
-`open-shell.py` положите куда угодно — например в
-`~/.freelens/crt-lens/securecrt/open-shell.py`. Он ничего не настраивает: при
-подключении вкладки смотрит на её заголовок, находит рядом задание
-(`<рабочий каталог>/jobs/<заголовок>.sh` или `.cmd`) и выполняет его.
+## 1. The tab script
 
-## 2. Сессия-обёртка
+Put `open-shell.py` anywhere you like — for example
+`~/.freelens/crt-lens/securecrt/open-shell.py`. It configures nothing: when the tab connects, it
+looks at the tab title, finds the matching job next to it
+(`<working dir>/jobs/<title>.sh` or `.cmd`) and runs it.
 
-Скопируйте `crt-lens.ini` в каталог сессий SecureCRT:
+## 2. The wrapper session
 
-| ОС | Куда |
-|---|---|
+Copy `crt-lens.ini` into the SecureCRT sessions directory:
+
+| OS | Where |
+| --- | --- |
 | macOS | `~/Library/Application Support/VanDyke/SecureCRT/Config/Sessions/crt-lens.ini` |
 | Windows | `%APPDATA%\VanDyke\Config\Sessions\crt-lens.ini` |
 
-и замените в нём `{{script}}` на полный путь к `open-shell.py` (кнопка
-«Разложить примеры» делает это за вас).
+and replace `{{script}}` in it with the full path to `open-shell.py` (the "write out the examples"
+button does that for you).
 
-То же самое можно сделать через интерфейс: создать сессию `crt-lens` с
-протоколом **Local Shell** и в `Session Options → Terminal → Advanced` включить
-**Use script file**, указав `open-shell.py`.
+The same can be done through the UI: create a session named `crt-lens` with the **Local Shell**
+protocol and, in `Session Options → Terminal → Advanced`, enable **Use script file** pointing at
+`open-shell.py`.
 
-Имя сессии должно совпадать с тем, что стоит в argv пресета (`/S crt-lens`).
+The session name must match the one in the preset's argv (`/S crt-lens`).
 
 ## 3. Single Instance
 
-В `Global Options` SecureCRT включите **Single Instance**. Без него каждый запуск
-бинаря поднимает отдельное приложение, и вкладка откроется не в рабочем окне.
+In SecureCRT `Global Options`, enable **Single Instance**. Without it every launch of the binary
+starts a separate application, and the tab opens outside your working window.
 
-Не хочется менять глобальную настройку — можно передать свой config-каталог
-аргументами, дописав их в argv пресета (работает, только когда SecureCRT уже
-запущен):
+If you would rather not change a global setting, you can pass your own config directory as
+arguments in the preset's argv (this works only while SecureCRT is already running):
 
 ```yaml
 terminals:
   crt:
     job: posix
     darwin:
-      argv: ["/Applications/SecureCRT.app/Contents/MacOS/SecureCRT", "/F", "/Users/<вы>/.freelens/crt-lens/crt-config", "/T", "/N", "{{title}}", "/S", "crt-lens"]
+      argv: ["/Applications/SecureCRT.app/Contents/MacOS/SecureCRT", "/F", "/Users/<you>/.freelens/crt-lens/crt-config", "/T", "/N", "{{title}}", "/S", "crt-lens"]
 ```
 
-## Почему так, а не проще
+## Why this way and not something simpler
 
-Проверено на SecureCRT 9.4.1 (macOS):
+Verified on SecureCRT 9.4.1 (macOS):
 
-| Попытка | Результат |
-|---|---|
-| `/SCRIPT` в командной строке | до уже запущенного инстанса **не доезжает** |
-| `Shell Path` / `Shell Arguments` в сессии | macOS-версия **игнорирует** |
-| команда локального шелла из интерфейса | лежит в `Local Shell Command Pre-connect V2` зашифрованной |
-| плейнтекст в то же поле | игнорируется |
-| `Use Script File` + `Script Filename V2` | **работает**, скрипт запускается в своей вкладке |
+| Attempt | Result |
+| --- | --- |
+| `/SCRIPT` on the command line | **never reaches** an already running instance |
+| `Shell Path` / `Shell Arguments` in the session | **ignored** by the macOS build |
+| local shell command set through the UI | stored encrypted in `Local Shell Command Pre-connect V2` |
+| plaintext in that same field | ignored |
+| `Use Script File` + `Script Filename V2` | **works**, the script runs in its own tab |
 
-Скрипты в SecureCRT — один на вкладку, поэтому агент из скилла `tmux` в соседней
-вкладке открытию шелла не мешает.
+SecureCRT scripts are one per tab, so an agent running in a neighbouring tab does not interfere
+with opening a shell.
 
-Побочная польза от адресации задания заголовком: при реконнекте вкладки команда
-выполняется заново. Обратная сторона — две цели с одинаковым заголовком делят
-один файл задания; если такое встретится, разведите их шаблоном `title`.
+A side benefit of addressing the job by title: reconnecting the tab runs the command again. The
+flip side is that two targets with the same title share one job file; if you ever hit that,
+separate them with a `title` template.
