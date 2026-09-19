@@ -700,8 +700,8 @@ export function normalizeConfig(parsed: unknown): CrtLensConfig {
  * — но кнопка «Дефолты» в настройках не должна падать из-за неполной установки.
  */
 const FALLBACK_SAMPLE = [
-  "# Файла crt-lens.sample.yaml рядом с расширением не нашлось — вот минимум.",
-  "# Полный пример со всеми полями лежит в репозитории расширения.",
+  "# No crt-lens.sample.yaml was found next to the extension — here is the minimum.",
+  "# The full example with every field lives in the extension repository.",
   "",
   "buttons:",
   "  - id: shell",
@@ -771,25 +771,25 @@ export function saveConfigYaml(text: string): void {
   const parsed = yaml.load(text);
 
   if (!parsed || typeof parsed !== "object") {
-    throw new Error("конфиг должен быть YAML-объектом");
+    throw new Error("the config must be a YAML object");
   }
 
   const { rules, buttons, vars, terminals } = parsed as Partial<CrtLensConfig>;
 
   if (rules !== undefined && !Array.isArray(rules)) {
-    throw new Error("rules должен быть списком");
+    throw new Error("rules must be a list");
   }
 
   if (buttons !== undefined && !Array.isArray(buttons)) {
-    throw new Error("buttons должен быть списком — у каждой кнопки своё поле id");
+    throw new Error("buttons must be a list — every button has its own id field");
   }
 
   if (vars !== undefined && !Array.isArray(vars)) {
-    throw new Error("vars должен быть списком записей с полем set");
+    throw new Error("vars must be a list of entries with a set field");
   }
 
   if (terminals !== undefined && (typeof terminals !== "object" || Array.isArray(terminals))) {
-    throw new Error("terminals должен быть мапой: имя пресета → описание");
+    throw new Error("terminals must be a map: preset name → description");
   }
 
   const file = configPath();

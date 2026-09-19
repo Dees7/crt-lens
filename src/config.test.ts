@@ -39,7 +39,7 @@ function button(id: string) {
 check("пример читается с диска, а не собирается из кода", () => {
   assert.ok(sampleConfigPath().endsWith("crt-lens.sample.yaml"));
   // первая строка файла — комментарий: дамп YAML такого не умеет
-  assert.ok(defaultConfigYaml().startsWith("# Настройки расширения crt-lens"));
+  assert.ok(defaultConfigYaml().startsWith("# crt-lens settings"));
 });
 
 check("пример разбирается и не даёт замечаний", () => {

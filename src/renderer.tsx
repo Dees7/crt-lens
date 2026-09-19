@@ -13,7 +13,7 @@ function startupConfig(): CrtLensConfig {
   try {
     return loadConfig();
   } catch (error) {
-    console.warn("[crt-lens] не смог прочитать конфиг при старте:", error);
+    console.warn("[crt-lens] could not read the config at startup:", error);
 
     return DEFAULT_CONFIG;
   }

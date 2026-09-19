@@ -45,7 +45,7 @@ function runInLensTerminal(built: BuiltCommand): void {
   console.info(`[crt-lens] ${built.title}: ${built.command} (dock ${tab.id})`);
 
   terminalStore.sendCommand(built.command, { enter: true, tabId: tab.id }).catch((error) => {
-    console.warn("[crt-lens] не отправил команду в терминал:", error);
+    console.warn("[crt-lens] could not send the command to the terminal:", error);
     Notifications.error(`crt-lens: ${error instanceof Error ? error.message : String(error)}`);
   });
 }
@@ -107,7 +107,7 @@ function openLogsTab(object: KubeObject, built: BuiltCommand): void {
       const pod = pickPod(pods);
 
       if (!pod) {
-        Notifications.info(`crt-lens: у ${what} нет подов — логи открывать не на чем`);
+        Notifications.info(`crt-lens: ${what} has no pods — nothing to open the logs on`);
 
         return;
       }
@@ -115,19 +115,19 @@ function openLogsTab(object: KubeObject, built: BuiltCommand): void {
       const container = pickContainer(pod, built.vars.container || undefined);
 
       if (!container) {
-        Notifications.error(`crt-lens: у пода ${pod.getName()} нет контейнеров`);
+        Notifications.error(`crt-lens: pod ${pod.getName()} has no containers`);
 
         return;
       }
 
       const tab = logTabStore.createPodTab({ selectedPod: pod, selectedContainer: container });
 
-      console.info(`[crt-lens] логи ${what}: ${pod.getName()}/${container.name} (dock ${tab})`);
+      console.info(`[crt-lens] logs ${what}: ${pod.getName()}/${container.name} (dock ${tab})`);
     })
     .catch((error) => {
-      console.warn("[crt-lens] не открыл логи:", error);
+      console.warn("[crt-lens] could not open the logs:", error);
       Notifications.error(
-        `crt-lens: не нашёл поды ${what} — ${error instanceof Error ? error.message : String(error)}`,
+        `crt-lens: could not find the pods of ${what} — ${error instanceof Error ? error.message : String(error)}`,
       );
     });
 }
@@ -141,7 +141,7 @@ function openUrl(built: BuiltCommand): void {
 /** Что именно покажет диалог подтверждения: команду, ссылку или цель логов. */
 function confirmText(button: ButtonSpec, built: BuiltCommand): string {
   if (button.type === "url") return built.url;
-  if (button.type === "logs") return `логи ${built.vars.kind}/${built.vars.name}`;
+  if (button.type === "logs") return `logs ${built.vars.kind}/${built.vars.name}`;
 
   return built.command;
 }
@@ -177,8 +177,8 @@ function InputDialogBody(props: {
   const [value, setValue] = useState(state.value);
   const box = useRef<HTMLDivElement | null>(null);
 
-  // ConfirmDialog ставит autoFocus на свою кнопку «Запустить», и она забирает
-  // фокус после нас — поэтому в поле возвращаемся следующим тиком.
+  // ConfirmDialog puts autoFocus on its own Run button, and it takes the focus
+  // after us — so we come back to the field on the next tick.
   useEffect(() => {
     const timer = setTimeout(() => box.current?.querySelector("input")?.focus(), 0);
 
@@ -196,12 +196,12 @@ function InputDialogBody(props: {
   return (
     <div className={styles.dialog} ref={box}>
       <p>
-        Запустить <b>{button.name}</b>?
+        Run <b>{button.name}</b>?
       </p>
-      <p className={styles.hint}>{spec.label || "Ввод"}</p>
+      <p className={styles.hint}>{spec.label || "Input"}</p>
       <Input value={value} onChange={change} onSubmit={() => okButtonOf(box.current)?.click()} />
       <p className={styles.preview}>{confirmText(button, state.built)}</p>
-      {empty && <p className={styles.error}>нужен непустой ответ</p>}
+      {empty && <p className={styles.error}>a non-empty answer is required</p>}
     </div>
   );
 }
@@ -224,7 +224,7 @@ export function runButton(
     try {
       if (button.type === "logs") {
         if (!object) {
-          console.warn(`[crt-lens] кнопка ${button.id}: логи без объекта открывать не на чем`);
+          console.warn(`[crt-lens] button ${button.id}: logs need an object to open on`);
 
           return;
         }
@@ -238,7 +238,7 @@ export function runButton(
         runInExternalTerminal(config, run);
       }
     } catch (error) {
-      console.warn("[crt-lens] не запустил кнопку:", error);
+      console.warn("[crt-lens] could not run the button:", error);
       components().Notifications.error(
         `crt-lens: ${error instanceof Error ? error.message : String(error)}`,
       );
@@ -252,7 +252,7 @@ export function runButton(
     const state = { value: initial, built: withInput(config, button, built, initial) };
 
     components().ConfirmDialog.open({
-      labelOk: "Запустить",
+      labelOk: "Run",
       message: (
         <InputDialogBody
           config={config}
@@ -264,7 +264,9 @@ export function runButton(
       ),
       ok: () => {
         if (spec.required && state.value.trim() === "") {
-          components().Notifications.error(`crt-lens: ${button.name} — нужен непустой ответ`);
+          components().Notifications.error(
+            `crt-lens: ${button.name} — a non-empty answer is required`,
+          );
 
           return;
         }
@@ -283,11 +285,11 @@ export function runButton(
   }
 
   components().ConfirmDialog.open({
-    labelOk: "Запустить",
+    labelOk: "Run",
     message: (
       <div>
         <p>
-          Запустить <b>{button.name}</b>?
+          Run <b>{button.name}</b>?
         </p>
         <p style={{ fontFamily: "var(--font-monospace)", wordBreak: "break-all" }}>
           {confirmText(button, built)}

@@ -24,7 +24,7 @@ const {
   Component: { Button },
 } = Renderer;
 
-/** Моноширинный фрагмент в цветах темы — чтобы не белел на тёмной теме. */
+/** Monospace fragment in theme colours — so it does not go white on a dark theme. */
 function Mono(props: { children: React.ReactNode }) {
   return <span className={styles.mono}>{props.children}</span>;
 }
@@ -32,29 +32,30 @@ function Mono(props: { children: React.ReactNode }) {
 export function CrtLensPreferenceHint() {
   return (
     <span className={styles.hint}>
-      Кнопки-плагины в меню объектов кластера: каждая запись <Mono>buttons</Mono> — отдельный
-      пункт меню со своим действием. <Mono>type: local</Mono> открывает терминал в доке,{" "}
-      <Mono>type: ext</Mono> — внешний терминал по пресету из <Mono>terminals</Mono>,{" "}
-      <Mono>type: url</Mono> — ссылку в браузере.
+      Plugin buttons in the menus of cluster objects: every entry under <Mono>buttons</Mono> is a
+      menu item with its own action. <Mono>type: local</Mono> opens a terminal in the dock,{" "}
+      <Mono>type: ext</Mono> an external terminal by a preset from <Mono>terminals</Mono>,{" "}
+      <Mono>type: url</Mono> a link in the browser, <Mono>type: logs</Mono> the built-in log
+      viewer.
       <br />
-      Где кнопка видна, решает <Mono>scopes</Mono> (<Mono>containers</Mono>, <Mono>pods</Mono>,{" "}
-      <Mono>nodes</Mono>, <Mono>namespaces</Mono> или kind), а значения подбирают{" "}
-      <Mono>rules</Mono> по маскам — выигрывает самое специфичное правило. Идентификаторы
-      окружений для ссылок лежат в <Mono>vars</Mono> и подбираются теми же масками.
+      Where a button shows up is decided by <Mono>scopes</Mono> (<Mono>containers</Mono>,{" "}
+      <Mono>pods</Mono>, <Mono>nodes</Mono>, <Mono>namespaces</Mono> or any kind), and the values
+      are picked by <Mono>rules</Mono> through masks — the most specific rule wins. Environment
+      identifiers for links live in <Mono>vars</Mono> and are picked by the same masks.
       <br />
-      <Mono>column: true</Mono> добавляет кнопку ещё и колонкой в список объектов — по колонке
-      на каждый kind из её <Mono>scopes</Mono> (скрыть её можно шестерёнкой в шапке таблицы).
+      <Mono>column: true</Mono> also adds the button as a column in the object list — one column
+      per kind in its <Mono>scopes</Mono> (hide it with the gear in the table header).
       <br />
-      Конфиг лежит в <Mono>{configPath()}</Mono>, его можно править и руками. Новый kind в{" "}
-      <Mono>scopes</Mono> и новая колонка видны после перезагрузки окна (Cmd+R).
+      The config lives in <Mono>{configPath()}</Mono> and can be edited by hand as well. A new
+      kind in <Mono>scopes</Mono> and a new column show up after a window reload (Cmd+R).
       <br />
-      Пресету <Mono>crt</Mono> нужна разовая ручная установка сессии SecureCRT — кнопка
-      «Разложить примеры SecureCRT» готовит файлы и печатает, что с ними сделать.
+      The <Mono>crt</Mono> preset needs a one-time manual setup of a SecureCRT session — the
+      “Write out SecureCRT examples” button prepares the files and prints what to do with them.
     </span>
   );
 }
 
-/** Примерные объекты, на которых считается превью. */
+/** Sample objects the preview is computed on. */
 function sampleTargets(
   kind: string,
   cluster: ClusterInfo,
@@ -94,23 +95,23 @@ function sampleTargets(
 
 function ruleLine(label: string, resolved: Resolved<string>): string {
   return resolved.rule
-    ? `    ${label}: правило #${resolved.index} ${JSON.stringify(resolved.rule)}`
-    : `    ${label}: ${resolved.value ? "дефолт" : "не задано"}`;
+    ? `    ${label}: rule #${resolved.index} ${JSON.stringify(resolved.rule)}`
+    : `    ${label}: ${resolved.value ? "default" : "not set"}`;
 }
 
-/** Строчка про терминалы: что описано и что из этого нашлось на машине. */
+/** The terminals line: what is described and what of it was found on this machine. */
 function terminalsLine(config: CrtLensConfig): string {
   const auto = chooseTerminal(config, "");
   const names = Object.keys(config.terminals).join(", ");
 
   return isProblem(auto)
-    ? `терминалы: ${names || "нет ни одного"} — автоопределение: ${auto.problem}`
-    : `терминалы: ${names} — автоопределение выбрало ${auto.name} (задание ${auto.flavor})`;
+    ? `terminals: ${names || "none at all"} — autodetection: ${auto.problem}`
+    : `terminals: ${names} — autodetection picked ${auto.name} (job ${auto.flavor})`;
 }
 
 function previewFor(config: CrtLensConfig, cluster: ClusterInfo): string[] {
   const head = [
-    `кластер: контекст ${cluster.context}, версия ${cluster.kubeVersion || "неизвестна"}`,
+    `cluster: context ${cluster.context}, version ${cluster.kubeVersion || "unknown"}`,
     terminalsLine(config),
   ];
   const lines: string[] = [];
@@ -142,37 +143,37 @@ function previewFor(config: CrtLensConfig, cluster: ClusterInfo): string[] {
 
       if (item.button.type === "url") {
         lines.push(
-          `    ${built.url || "ссылку взять неоткуда — задайте url"}`,
-          ruleLine("ссылка", built.urlRule),
+          `    ${built.url || "nowhere to take the link from — set url"}`,
+          ruleLine("link", built.urlRule),
         );
 
         if (built.vars.query) {
-          lines.push(`    селектор: ${built.vars.query}`, ruleLine("селектор", built.queryRule));
+          lines.push(`    selector: ${built.vars.query}`, ruleLine("selector", built.queryRule));
         }
 
         continue;
       }
 
       lines.push(
-        `    ${built.command || "команду взять неоткуда — задайте cmd"}`,
-        ruleLine("команда", built.cmd),
-        ruleLine("шелл", built.shell),
+        `    ${built.command || "nowhere to take the command from — set cmd"}`,
+        ruleLine("command", built.cmd),
+        ruleLine("shell", built.shell),
       );
 
       if (kind === "Node") {
-        lines.push(ruleLine("образ", built.image));
+        lines.push(ruleLine("image", built.image));
       }
     }
   }
 
   if (lines.length === 0) {
-    lines.push("ни одна кнопка не подошла к примерным объектам");
+    lines.push("no button matched the sample objects");
   }
 
   return [...head, ...lines];
 }
 
-/** Что получится для примера — по текущему кластеру и сохранённому конфигу. */
+/** What comes out for the samples — for the current cluster and the saved config. */
 function preview(): string[] {
   const cluster = activeCluster();
 
@@ -182,12 +183,12 @@ function preview(): string[] {
     const head = problems.map((problem) => `! ${problem}`);
 
     if (!cluster) {
-      return [...head, "нет активного кластера — команды посчитать не на чем"];
+      return [...head, "no active cluster — nothing to compute the commands against"];
     }
 
     return [...head, ...previewFor(config, cluster)];
   } catch (error) {
-    return [`не посчитал превью: ${String(error)}`];
+    return [`could not compute the preview: ${String(error)}`];
   }
 }
 
@@ -205,7 +206,7 @@ export function CrtLensPreferenceInput() {
   const save = () => {
     try {
       saveConfigYaml(text);
-      // колонки списка живут от observable — без этого они ждали бы опроса файла
+      // the list columns live off an observable — without this they would wait for a file poll
       refreshConfig();
 
       const problems = validateConfig(yaml.load(text));
@@ -213,31 +214,31 @@ export function CrtLensPreferenceInput() {
       setStatus({
         ok: problems.length === 0,
         message: problems.length
-          ? `Сохранено в ${configPath()}, но есть замечания — смотри ниже`
-          : `Сохранено в ${configPath()}`,
+          ? `Saved to ${configPath()}, but there are warnings — see below`
+          : `Saved to ${configPath()}`,
       });
       setLines(preview());
     } catch (error) {
-      setStatus({ ok: false, message: `Не сохранил: ${String(error)}` });
+      setStatus({ ok: false, message: `Not saved: ${String(error)}` });
     }
   };
 
   const reload = () => {
     try {
       setText(readConfigYaml());
-      setStatus({ ok: true, message: "Перечитал файл с диска" });
+      setStatus({ ok: true, message: "Re-read the file from disk" });
       setLines(preview());
     } catch (error) {
-      setStatus({ ok: false, message: `Не прочитал: ${String(error)}` });
+      setStatus({ ok: false, message: `Not read: ${String(error)}` });
     }
   };
 
   const reset = () => {
     setText(defaultConfigYaml());
-    setStatus({ ok: true, message: "Подставил дефолты — нажми «Сохранить», чтобы записать" });
+    setStatus({ ok: true, message: "Filled in the defaults — press “Save” to write them" });
   };
 
-  /** Разложить примеры SecureCRT. Настройки самого SecureCRT при этом не трогаются. */
+  /** Write out the SecureCRT examples. SecureCRT's own settings are not touched. */
   const examples = () => {
     try {
       const files = installExamples();
@@ -246,11 +247,12 @@ export function CrtLensPreferenceInput() {
       setStatus({
         ok: true,
         message:
-          `Разложил файлы рядом: ${session}. Осталось скопировать .ini в каталог сессий ` +
-          "SecureCRT и включить Single Instance — как именно, написано в README.md рядом с ними.",
+          `Wrote the files out: ${session}. What is left is to copy the .ini into the ` +
+          "SecureCRT sessions directory and enable Single Instance — the README.md next to " +
+          "them says how.",
       });
     } catch (error) {
-      setStatus({ ok: false, message: `Не разложил: ${String(error)}` });
+      setStatus({ ok: false, message: `Not written out: ${String(error)}` });
     }
   };
 
@@ -263,10 +265,10 @@ export function CrtLensPreferenceInput() {
         onChange={(event) => setText(event.target.value)}
       />
       <div className={styles.row}>
-        <Button primary label="Сохранить" onClick={save} />
-        <Button plain label="Перечитать" onClick={reload} />
-        <Button plain label="Дефолты" onClick={reset} />
-        <Button plain label="Разложить примеры SecureCRT" onClick={examples} />
+        <Button primary label="Save" onClick={save} />
+        <Button plain label="Re-read" onClick={reload} />
+        <Button plain label="Defaults" onClick={reset} />
+        <Button plain label="Write out SecureCRT examples" onClick={examples} />
       </div>
       {status && <div className={status.ok ? styles.ok : styles.error}>{status.message}</div>}
       <div className={styles.preview}>{lines.join("\n")}</div>

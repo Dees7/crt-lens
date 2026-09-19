@@ -7,8 +7,8 @@
 Команду в уже открытое приложение доставляет сессия-обёртка, которую надо
 поставить один раз руками.
 
-Быстрый путь: в `Preferences → Extensions → crt-lens` нажать **«Разложить примеры
-SecureCRT»** — файлы лягут в `~/.freelens/crt-lens/securecrt/`, а путь к скрипту
+Быстрый путь: в `Preferences → Extensions → crt-lens` нажать **«Write out SecureCRT
+examples»** — файлы лягут в `~/.freelens/crt-lens/securecrt/`, а путь к скрипту
 в сессии будет уже подставлен. Останется шаг 2.
 
 ## 1. Скрипт вкладки
@@ -28,7 +28,7 @@ SecureCRT»** — файлы лягут в `~/.freelens/crt-lens/securecrt/`, а
 | Windows | `%APPDATA%\VanDyke\Config\Sessions\crt-lens.ini` |
 
 и замените в нём `{{script}}` на полный путь к `open-shell.py` (кнопка
-«Разложить примеры» делает это за вас).
+«Write out SecureCRT examples» делает это за вас).
 
 То же самое можно сделать через интерфейс: создать сессию `crt-lens` с
 протоколом **Local Shell** и в `Session Options → Terminal → Advanced` включить

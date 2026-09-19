@@ -23,7 +23,7 @@ function read(): CrtLensConfig | undefined {
   try {
     return loadConfig();
   } catch (error) {
-    console.warn("[crt-lens] не смог прочитать конфиг для колонок:", error);
+    console.warn("[crt-lens] could not read the config for the columns:", error);
 
     return undefined;
   }
@@ -54,7 +54,10 @@ export function watchConfig(): void {
   try {
     fs.watchFile(configPath(), { interval: POLL_MS }, () => refreshConfig());
   } catch (error) {
-    console.warn("[crt-lens] не слежу за конфигом, колонки будут видеть его состояние на старте:", error);
+    console.warn(
+      "[crt-lens] not watching the config, the columns will see its state as of startup:",
+      error,
+    );
   }
 }
 

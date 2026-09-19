@@ -1,22 +1,23 @@
 # $language = "Python3"
 # $interface = "1.0"
-"""crt-lens: выполняет задание во вкладке, в которой подключился локальный шелл.
+"""crt-lens: runs the job in the tab whose local shell has just connected.
 
-Какое задание — узнаём из имени вкладки: расширение запускает сессию как
-`/N <заголовок>`, а рядом кладёт <рабочий каталог>/jobs/<заголовок>.sh (или .cmd
-на Windows). В имени файла всё, кроме букв, цифр, точки, минуса и подчёркивания,
-заменено на подчёркивание — те же правила, что в src/launch/job.ts.
+Which job is worked out from the tab caption: the extension starts the session
+as `/N <title>` and writes <work dir>/jobs/<title>.sh (or .cmd on Windows) next
+to it. In the file name everything but letters, digits, dot, minus and
+underscore is replaced by an underscore — the same rules as in
+src/launch/job.ts.
 
-Рабочий каталог ищется так же, как его ищет расширение: сначала
-~/.freelens/crt-lens, потом ~/.k8slens/crt-lens.
+The work directory is looked up the way the extension looks it up: first
+~/.freelens/crt-lens, then ~/.k8slens/crt-lens.
 
-Скрипт ничего не спрашивает и не показывает диалогов: он выполняется при каждом
-подключении вкладки, в том числе при реконнекте, и модальное окно в этот момент
-мешало бы работать.
+The script asks nothing and shows no dialogs: it runs on every connect of the
+tab, reconnects included, and a modal window at that moment would only get in
+the way.
 
-Шапку (# $language / # $interface) SecureCRT разбирает строго: любой другой
-комментарий в этих двух строках даёт «Invalid character encountered in script
-header».
+SecureCRT parses the header (# $language / # $interface) strictly: any other
+comment in those two lines gives "Invalid character encountered in script
+header".
 """
 import json
 import os
@@ -40,7 +41,8 @@ def work_dir():
 def job_path(caption):
     name = re.sub(r"[^A-Za-z0-9._-]", "_", str(caption).strip())
     jobs = os.path.join(work_dir(), "jobs")
-    # расширение пишет задание под свой шелл; ищем оба на случай общего каталога
+    # the extension writes the job for its own shell; look for both in case the
+    # directory is shared
     order = [".cmd", ".sh"] if WINDOWS else [".sh", ".cmd"]
 
     for suffix in order:
@@ -53,8 +55,8 @@ def job_path(caption):
 
 
 def debug(**fields):
-    # положите рядом с каталогом jobs пустой файл debug — и скрипт будет писать,
-    # что за вкладку он увидел и какое задание искал
+    # put an empty file named debug next to the jobs directory and the script
+    # will record which tab it saw and which job it looked for
     flag = os.path.join(work_dir(), "debug")
 
     if not os.path.exists(flag):
@@ -77,19 +79,19 @@ def status(tab, text):
 
 
 def main():
-    tab = crt.GetScriptTab()  # noqa: F821 — crt приходит из SecureCRT
+    tab = crt.GetScriptTab()  # noqa: F821 — crt comes from SecureCRT
     caption = str(tab.Caption)
     job = job_path(caption)
 
     debug(caption=caption, job=job, exists=os.path.exists(job))
 
     if not os.path.exists(job):
-        status(tab, "задание не найдено (%s)" % job)
+        status(tab, "job not found (%s)" % job)
         return
 
     if WINDOWS:
-        # call + exit повторяет поведение exec: выход из kubectl закрывает вкладку,
-        # а не возвращает в cmd.exe, из которого уже некуда деться
+        # call + exit repeats what exec does: leaving kubectl closes the tab
+        # instead of dropping back into a cmd.exe with nowhere to go
         tab.Screen.Send('call "%s" & exit\r\n' % job)
     else:
         tab.Screen.Send("exec %s\n" % job)

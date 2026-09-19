@@ -36,7 +36,7 @@ function unknownFields(raw: unknown, known: string[], where: string): string[] {
 
   return Object.keys(raw as Record<string, unknown>)
     .filter((field) => !known.includes(field))
-    .map((field) => `${where}: неизвестное поле ${JSON.stringify(field)} — оно игнорируется`);
+    .map((field) => `${where}: unknown field ${JSON.stringify(field)} — it is ignored`);
 }
 
 /**
@@ -59,7 +59,9 @@ function maskProblems(raw: unknown, where: string): string[] {
 
     if (typeof value === "string") {
       if (value === "") {
-        problems.push(`${where}: маска ${field} пустая — она игнорируется, а не «совпадает с пустым»`);
+        problems.push(
+          `${where}: mask ${field} is empty — it is ignored, it does not "match nothing"`,
+        );
       }
 
       continue;
@@ -69,11 +71,11 @@ function maskProblems(raw: unknown, where: string): string[] {
       const bad = value.filter((item) => typeof item !== "string" || item === "");
 
       if (value.length === 0) {
-        problems.push(`${where}: маска ${field} — пустой список, она игнорируется`);
+        problems.push(`${where}: mask ${field} is an empty list — it is ignored`);
       } else if (bad.length > 0) {
         problems.push(
-          `${where}: в маске ${field} есть значения, которые не строки: ` +
-            `${JSON.stringify(bad)} — они выброшены`,
+          `${where}: mask ${field} has values that are not strings: ` +
+            `${JSON.stringify(bad)} — they are dropped`,
         );
       }
 
@@ -81,8 +83,8 @@ function maskProblems(raw: unknown, where: string): string[] {
     }
 
     problems.push(
-      `${where}: маска ${field} должна быть строкой или списком строк, а не ` +
-        `${JSON.stringify(value)} — она игнорируется, и кнопка видна везде`,
+      `${where}: mask ${field} must be a string or a list of strings, not ` +
+        `${JSON.stringify(value)} — it is ignored, and the button shows up everywhere`,
     );
   }
 
@@ -111,21 +113,21 @@ function terminalProblems(
     const spec = config.terminals[name];
 
     if (!spec) {
-      problems.push(`${where}: нет пресета терминала ${JSON.stringify(name)} в terminals`);
+      problems.push(`${where}: no terminal preset ${JSON.stringify(name)} in terminals`);
 
       continue;
     }
 
     if (platform && !spec[platform]) {
       problems.push(
-        `${where}: у пресета ${name} нет секции ${platform} — на этой машине кнопки не будет`,
+        `${where}: preset ${name} has no ${platform} section — no button on this machine`,
       );
     }
   }
 
   if (wanted.length === 0 && !config.default_terminal && !config.terminals[CRT_TERMINAL]) {
     problems.push(
-      `${where}: не задан terminal и нет default_terminal — терминал выберется автоопределением`,
+      `${where}: no terminal and no default_terminal — the terminal will be autodetected`,
     );
   }
 
@@ -175,15 +177,15 @@ function inputProblems(
 
   if (raw.input !== undefined && raw.input !== false && !normalizeInput(raw.input)) {
     problems.push(
-      `${where}: input должен быть true, строкой-подписью или мапой ` +
-        `{ label, placeholder, default, required } — запроса ввода не будет`,
+      `${where}: input must be true, a label string or a map ` +
+        `{ label, placeholder, default, required } — there will be no input prompt`,
     );
   }
 
   if (!button.input) {
     if (used) {
       problems.push(
-        `${where}: в шаблонах есть {{input}}, но input не задан — подставится пустая строка`,
+        `${where}: the templates use {{input}}, but input is not set — an empty string is substituted`,
       );
     }
 
@@ -194,13 +196,15 @@ function inputProblems(
 
   if (!used) {
     problems.push(
-      `${where}: input спрашивает строку, но подставлять её некуда — добавьте {{input}} ` +
-        "в cmd, url, query или title",
+      `${where}: input asks for a string, but there is nowhere to put it — add {{input}} ` +
+        "to cmd, url, query or title",
     );
   }
 
   if (button.type === "logs") {
-    problems.push(`${where}: type logs не собирает команду — ответ на input некуда девать`);
+    problems.push(
+      `${where}: type logs builds no command — the input answer has nowhere to go`,
+    );
   }
 
   return problems;
@@ -218,23 +222,23 @@ export function validateConfig(raw: unknown): string[] {
   const problems: string[] = [];
 
   if (!raw || typeof raw !== "object") {
-    return ["конфиг должен быть YAML-объектом"];
+    return ["the config must be a YAML object"];
   }
 
   const source = raw as Record<string, unknown>;
 
   if (source.buttons !== undefined && !Array.isArray(source.buttons)) {
-    return ["buttons должен быть списком — у каждой кнопки своё поле id"];
+    return ["buttons must be a list — every button has its own id field"];
   }
 
   if (source.vars !== undefined && !Array.isArray(source.vars)) {
-    problems.push("vars должен быть списком записей вида { context: ..., set: { ключ: значение } }");
+    problems.push("vars must be a list of entries like { context: ..., set: { key: value } }");
   } else if (Array.isArray(source.vars)) {
     source.vars.forEach((entry, index) => {
       const fields = (entry && typeof entry === "object" ? entry : {}) as Record<string, unknown>;
 
       if (!fields.set || typeof fields.set !== "object" || Array.isArray(fields.set)) {
-        problems.push(`vars #${index}: нет мапы set — запись ничего не задаёт и игнорируется`);
+        problems.push(`vars #${index}: no set map — the entry defines nothing and is ignored`);
       }
 
       problems.push(...unknownFields(entry, [...MASK_FIELDS, "set"] as string[], `vars #${index}`));
@@ -246,7 +250,7 @@ export function validateConfig(raw: unknown): string[] {
     source.terminals !== undefined &&
     (typeof source.terminals !== "object" || Array.isArray(source.terminals))
   ) {
-    problems.push("terminals должен быть мапой: имя пресета → описание");
+    problems.push("terminals must be a map: preset name → description");
   }
 
   const config = normalizeConfig(raw);
@@ -258,21 +262,21 @@ export function validateConfig(raw: unknown): string[] {
       string,
       unknown
     >;
-    const where = `кнопка #${index + 1} (${button.id})`;
+    const where = `button #${index + 1} (${button.id})`;
 
     if (typeof fields.id !== "string" || fields.id === "") {
-      problems.push(`${where}: нет id — кнопки с одинаковым id перекрывают друг друга, задайте его`);
+      problems.push(`${where}: no id — buttons sharing an id override each other, set one`);
     }
 
     if (fields.type !== undefined && !ACCEPTED_TYPES.includes(fields.type as ButtonType)) {
       problems.push(
-        `${where}: неизвестный type ${JSON.stringify(fields.type)}, бывает local, ext, url и logs ` +
-          "(старый crt читается как ext с пресетом crt)",
+        `${where}: unknown type ${JSON.stringify(fields.type)}, there are local, ext, url and logs ` +
+          "(the legacy crt is read as ext with the crt preset)",
       );
     }
 
     if (fields.vars !== undefined && (typeof fields.vars !== "object" || Array.isArray(fields.vars))) {
-      problems.push(`${where}: vars должен быть мапой ключ → значение`);
+      problems.push(`${where}: vars must be a map of key → value`);
     }
 
     problems.push(...terminalProblems(config, button, where));
@@ -282,7 +286,7 @@ export function validateConfig(raw: unknown): string[] {
       const hasUrl = button.url !== undefined || button.rules.some((rule) => rule.url !== undefined);
 
       if (!hasUrl) {
-        problems.push(`${where}: type url без url — задайте ссылку у кнопки или в rules`);
+        problems.push(`${where}: type url with no url — set the link on the button or in rules`);
       }
     }
 
@@ -290,10 +294,10 @@ export function validateConfig(raw: unknown): string[] {
     problems.push(...maskProblems(rawButton, where));
 
     if (fields.rules !== undefined && !Array.isArray(fields.rules)) {
-      problems.push(`${where}: rules должен быть списком`);
+      problems.push(`${where}: rules must be a list`);
     } else if (Array.isArray(fields.rules)) {
       fields.rules.forEach((rule, ruleIndex) => {
-        const ruleWhere = `${where}, правило #${ruleIndex}`;
+        const ruleWhere = `${where}, rule #${ruleIndex}`;
 
         problems.push(...unknownFields(rule, KNOWN_RULE_FIELDS, ruleWhere));
         problems.push(...maskProblems(rule, ruleWhere));
@@ -301,7 +305,7 @@ export function validateConfig(raw: unknown): string[] {
     }
 
     if (button.scopes.length === 0) {
-      problems.push(`${where}: не задан scopes — кнопка нигде не появится`);
+      problems.push(`${where}: no scopes — the button will show up nowhere`);
 
       return;
     }
@@ -311,8 +315,8 @@ export function validateConfig(raw: unknown): string[] {
 
       if (!scope) {
         problems.push(
-          `${where}: неизвестный scope ${JSON.stringify(raw)} — для своего kind укажите ` +
-            "apiVersion явно, например apps/v1:MyKind",
+          `${where}: unknown scope ${JSON.stringify(raw)} — for your own kind spell the ` +
+            "apiVersion out, for example apps/v1:MyKind",
         );
 
         continue;
@@ -322,7 +326,7 @@ export function validateConfig(raw: unknown): string[] {
       if (button.type === "logs") {
         if (!logsKindSupported(scope.kind)) {
           problems.push(
-            `${where}: type logs не умеет scope ${raw} — логи есть у ${LOG_KINDS.join(", ")}`,
+            `${where}: type logs cannot do scope ${raw} — logs exist for ${LOG_KINDS.join(", ")}`,
           );
         }
 
@@ -337,7 +341,7 @@ export function validateConfig(raw: unknown): string[] {
 
       if (!hasCmd) {
         problems.push(
-          `${where}: в scope ${raw} нет команды по умолчанию — задайте cmd у кнопки или в rules`,
+          `${where}: scope ${raw} has no default command — set cmd on the button or in rules`,
         );
       }
     }

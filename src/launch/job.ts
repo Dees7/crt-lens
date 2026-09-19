@@ -39,7 +39,7 @@ export function jobBody(title: string, command: string, flavor: JobFlavor): stri
   return [
     "#!/bin/bash",
     `# crt-lens: ${title}`,
-    "# Файл создан расширением crt-lens и переживает реконнект вкладки.",
+    "# Written by the crt-lens extension; it survives a tab reconnect.",
     `exec ${command}`,
     "",
   ].join("\n");
