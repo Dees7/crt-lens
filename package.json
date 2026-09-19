@@ -1,7 +1,7 @@
 {
 	"name": "crt-lens",
 	"version": "1.1.0",
-	"description": "Кнопки-плагины в меню объектов Freelens: терминал в доке, внешний терминал, SecureCRT, ссылки в браузер",
+	"description": "Plugin buttons in Freelens object menus: run any command in the dock terminal or an external one (SecureCRT, iTerm, kitty, Windows Terminal), open logs, open links",
 	"publisher": "@crt-lens/crt-lens",
 	"renderer": "dist/renderer.js",
 	"files": [
