@@ -1,6 +1,6 @@
 {
 	"name": "crt-lens",
-	"version": "0.2.0",
+	"version": "2.0.0",
 	"type": "module",
 	"description": "Кнопки-плагины в меню объектов Freelens: терминал в доке, внешний терминал, SecureCRT, ссылки в браузер",
 	"publisher": "@crt-lens/crt-lens",
