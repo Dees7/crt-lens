@@ -209,15 +209,15 @@ export function skipReason(
 ): string {
   const target = picked.targets[0];
 
-  if (!target) return "не нашлось ни одной подходящей цели";
+  if (!target) return "no matching target was found";
 
   const built = buildButtonCommand(config, picked.button, picked.scope, target, cluster.kubeconfig);
 
   if (built.problem) return built.problem;
 
   return picked.button.type === "url"
-    ? "пустая ссылка — задайте url и проверьте, что для контекста есть запись в vars"
-    : "команду взять неоткуда — задайте cmd";
+    ? "empty link — set url and check that the context has an entry in vars"
+    : "nowhere to take the command from — set cmd";
 }
 
 /**
@@ -234,7 +234,7 @@ export function CrtMenuItems(props: Renderer.Component.KubeObjectMenuProps<KubeO
   const cluster = activeCluster();
 
   if (!cluster) {
-    console.warn("[crt-lens] нет активного кластера или у него пустой kubeconfigContext");
+    console.warn("[crt-lens] no active cluster, or its kubeconfigContext is empty");
 
     return null;
   }
@@ -250,7 +250,7 @@ export function CrtMenuItems(props: Renderer.Component.KubeObjectMenuProps<KubeO
       if (item.runs.length > 0) return true;
 
       console.warn(
-        `[crt-lens] кнопка ${item.picked.button.id}: в scope ${item.picked.scope.raw} нечего открывать — ` +
+        `[crt-lens] button ${item.picked.button.id}: nothing to open in scope ${item.picked.scope.raw} — ` +
           `${skipReason(config, item.picked, cluster)}`,
       );
 

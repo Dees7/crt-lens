@@ -6,9 +6,9 @@ The `crt` preset in crt-lens opens a SecureCRT tab. The extension itself knows n
 SecureCRT — it just writes a job file and launches the binary. What delivers the command into the
 already running application is a wrapper session, and that has to be installed once, by hand.
 
-The fast way: in `Preferences → Extensions → crt-lens` press **`Разложить примеры SecureCRT`**
-("write out the SecureCRT examples") — the files land in `~/.freelens/crt-lens/securecrt/` with the
-script path already substituted into the session. Only step 2 is left.
+The fast way: in `Preferences → Extensions → crt-lens` press **Write out SecureCRT examples** —
+the files land in `~/.freelens/crt-lens/securecrt/` with the script path already substituted into
+the session. Only step 2 is left.
 
 ## 1. The tab script
 

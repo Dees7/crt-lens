@@ -586,10 +586,10 @@ check("validateConfig ругается на то, что нормализаци�
     ],
   });
 
-  assert.ok(problems.some((problem) => problem.includes("неизвестный type")));
-  assert.ok(problems.some((problem) => problem.includes("неизвестный scope")));
-  assert.ok(problems.some((problem) => problem.includes("нет команды по умолчанию")));
-  assert.ok(problems.some((problem) => problem.includes("нет id")));
+  assert.ok(problems.some((problem) => problem.includes("unknown type")));
+  assert.ok(problems.some((problem) => problem.includes("unknown scope")));
+  assert.ok(problems.some((problem) => problem.includes("no default command")));
+  assert.ok(problems.some((problem) => problem.includes("no id")));
 });
 
 check("опечатка в поле правила не проходит молча", () => {
@@ -604,7 +604,7 @@ check("опечатка в поле правила не проходит мол�
     ],
   });
 
-  assert.ok(problems.some((problem) => problem.includes('неизвестное поле "kube_versions"')));
+  assert.ok(problems.some((problem) => problem.includes('unknown field "kube_versions"')));
 });
 
 check("запрос ввода без {{input}} и {{input}} без запроса — оба замечание", () => {
@@ -616,9 +616,9 @@ check("запрос ввода без {{input}} и {{input}} без запрос
     ],
   });
 
-  assert.ok(problems.some((problem) => problem.includes("подставлять её некуда")));
-  assert.ok(problems.some((problem) => problem.includes("подставится пустая строка")));
-  assert.ok(problems.some((problem) => problem.includes('неизвестное поле "wat"')));
+  assert.ok(problems.some((problem) => problem.includes("nowhere to put it")));
+  assert.ok(problems.some((problem) => problem.includes("an empty string is substituted")));
+  assert.ok(problems.some((problem) => problem.includes('unknown field "wat"')));
 });
 
 check("input мусором не молчит, а input в rules и в title засчитывается", () => {
@@ -638,8 +638,8 @@ check("input мусором не молчит, а input в rules и в title з�
   });
 
   assert.deepStrictEqual(problems, [
-    "кнопка #1 (a): input должен быть true, строкой-подписью или мапой " +
-      "{ label, placeholder, default, required } — запроса ввода не будет",
+    "button #1 (a): input must be true, a label string or a map " +
+      "{ label, placeholder, default, required } — there will be no input prompt",
   ]);
 });
 
@@ -717,7 +717,7 @@ check("маска-словарь: разбор её выбросит, валид
     buttons: [{ id: "logs", scopes: ["containers"], cmd: "x", namespace: { prod: true } }],
   });
 
-  assert.ok(problems.some((problem) => problem.includes("маска namespace должна быть строкой")));
+  assert.ok(problems.some((problem) => problem.includes("mask namespace must be a string")));
 });
 
 check("нестроковые элементы списка не молчат", () => {
@@ -725,7 +725,7 @@ check("нестроковые элементы списка не молчат", 
     buttons: [{ id: "logs", scopes: ["containers"], cmd: "x", namespace: ["prod", 42] }],
   });
 
-  assert.ok(problems.some((problem) => problem.includes("не строки")));
+  assert.ok(problems.some((problem) => problem.includes("are not strings")));
 });
 
 check("пустая маска и пустой список — тоже замечание", () => {
@@ -736,8 +736,8 @@ check("пустая маска и пустой список — тоже зам�
     ],
   });
 
-  assert.ok(problems.some((problem) => problem.includes("маска container пустая")));
-  assert.ok(problems.some((problem) => problem.includes("пустой список")));
+  assert.ok(problems.some((problem) => problem.includes("mask container is empty")));
+  assert.ok(problems.some((problem) => problem.includes("is an empty list")));
 });
 
 check("негодная маска в правиле и в vars тоже видна", () => {
@@ -746,8 +746,8 @@ check("негодная маска в правиле и в vars тоже вид�
     buttons: [{ id: "a", scopes: ["containers"], cmd: "x", rules: [{ pod: 42, shell: "sh" }] }],
   });
 
-  assert.ok(problems.some((problem) => problem.includes("vars #0: маска namespace")));
-  assert.ok(problems.some((problem) => problem.includes("правило #0: маска pod")));
+  assert.ok(problems.some((problem) => problem.includes("vars #0: mask namespace")));
+  assert.ok(problems.some((problem) => problem.includes("rule #0: mask pod")));
 });
 
 check("список строк замечаний не даёт", () => {

@@ -100,7 +100,7 @@ export function chooseTerminal(
   const platform = currentPlatform();
 
   if (!platform) {
-    return { problem: `платформа ${process.platform} не поддерживается` };
+    return { problem: `platform ${process.platform} is not supported` };
   }
 
   const explicit = wanted || config.default_terminal;
@@ -109,13 +109,13 @@ export function chooseTerminal(
     const spec = config.terminals[explicit];
 
     if (!spec) {
-      return { problem: `нет пресета терминала ${explicit} — опишите его в terminals` };
+      return { problem: `no terminal preset ${explicit} — describe it in terminals` };
     }
 
     const section = spec[platform];
 
     if (!section) {
-      return { problem: `у пресета ${explicit} нет секции ${platform}` };
+      return { problem: `preset ${explicit} has no ${platform} section` };
     }
 
     return { name: explicit, platform: section, flavor: jobFlavorOf(spec, platform) };
@@ -128,7 +128,7 @@ export function chooseTerminal(
   const found = names.find((name) => terminalAvailable(config.terminals[name], platform));
 
   if (!found) {
-    return { problem: `не нашёл ни одного установленного терминала для ${platform}` };
+    return { problem: `found no installed terminal for ${platform}` };
   }
 
   const spec = config.terminals[found];
@@ -170,7 +170,7 @@ export function openInTerminal(
   const argv = chosen.platform.argv.map((arg) => renderTemplate(arg, vars));
 
   if (!binaryExists(argv[0])) {
-    throw new Error(`не нашёл ${argv[0]} — поправьте пресет ${chosen.name} в terminals`);
+    throw new Error(`${argv[0]} not found — fix the ${chosen.name} preset in terminals`);
   }
 
   detach(argv);

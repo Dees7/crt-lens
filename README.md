@@ -121,9 +121,8 @@ right there (or in your editor of choice). Under the editor there is a **live pr
 terminals were found, which buttons came out of the file, and the exact command or URL they would
 build for sample objects — plus warnings about the mistakes that would otherwise be silent.
 
-Four buttons under the editor: `Сохранить` (save), `Перечитать` (re-read the file from disk),
-`Дефолты` (fill the editor with the shipped sample) and `Разложить примеры SecureCRT` (write the
-SecureCRT helper files out).
+Four buttons under the editor: **Save**, **Re-read** (re-read the file from disk), **Defaults**
+(fill the editor with the shipped sample) and **Write out SecureCRT examples**.
 
 The config lives in `~/.freelens/crt-lens.yaml`; if a `~/.k8slens/crt-lens.yaml` from older
 versions is next to it, that one is used instead — no need to migrate. The working directory
@@ -540,8 +539,8 @@ template.
 
 The `crt` preset is an ordinary preset; everything that makes it special lives in
 [`examples/securecrt/`](examples/securecrt/README.md) and is installed **once, by hand**: a wrapper
-session and a script that runs the job in the tab. The `Разложить примеры SecureCRT` button in the
-preferences writes the files out and prints what to do with them.
+session and a script that runs the job in the tab. The **Write out SecureCRT examples** button in
+the preferences writes the files out and prints what to do with them.
 
 In short: you need a `crt-lens` session (Local Shell + Use Script File → `open-shell.py`) and
 **Single Instance** enabled in Global Options. Details, and why it cannot be simpler, are in

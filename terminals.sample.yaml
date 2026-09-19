@@ -1,48 +1,48 @@
-# Встроенные пресеты внешних терминалов — как есть, в том виде, в каком их
-# держит расширение (src/terminals-default.ts).
+# The built-in external terminal presets — exactly as the extension holds them
+# (src/terminals-default.ts).
 #
-# Этот файл ничего не включает и не выключает: пресеты работают и без него.
-# Он нужен, чтобы посмотреть, как пресет устроен, и скопировать похожий к себе
-# в ~/.freelens/crt-lens.yaml. Секция terminals из файла настроек добавляется
-# к этой таблице и перекрывает записи по имени: одноимённый пресет заменяет
-# встроенный целиком, а не дополняет его по платформам.
+# This file turns nothing on and nothing off: the presets work without it. It is
+# here so you can see how a preset is built and copy a similar one into your own
+# ~/.freelens/crt-lens.yaml. The terminals section of the config file is added to
+# this table and overrides entries by name: a preset of the same name replaces
+# the built-in one entirely, it is not merged per platform.
 #
-# Пресет — это данные, а не код. Расширение умеет с ним ровно три вещи:
-# написать файл задания, развернуть подстановки в argv и запустить процесс.
+# A preset is data, not code. The extension does exactly three things with it:
+# writes the job file, expands the substitutions in argv, and starts the process.
 #
-#   job       posix | cmd | none — формат файла задания и стиль кавычек.
-#             posix — sh-скрипт и кавычки '…', cmd — .cmd-файл и кавычки "…"
-#             с удвоением % , none — задание не пишется, команда уезжает
-#             прямо в argv. Секция платформы может перекрыть job своим
-#             (так сделано у gitbash: Windows, но задание posix).
+#   job       posix | cmd | none — the job file format and the quoting style.
+#             posix — an sh script and '…' quotes, cmd — a .cmd file and "…"
+#             quotes with doubled %, none — no job file is written, the command
+#             goes straight into argv. A platform section may override job with
+#             its own (that is how gitbash works: Windows, but a posix job).
 #   darwin    \
-#   win32      > секции по платформам; нет секции под текущую — на этой машине
-#   linux     /  кнопки с этим пресетом не будет.
-#   argv      команда запуска: argv[0] — бинарь, дальше аргументы.
-#   activate  необязательный второй запуск: чем поднять окно, если сам
-#             терминал этого не делает.
+#   win32      > per-platform sections; no section for the current platform means
+#   linux     /  no button with this preset on this machine.
+#   argv      the launch command: argv[0] is the binary, the rest are arguments.
+#   activate  an optional second launch: what raises the window if the terminal
+#             does not do it itself.
 #
-# Подстановки в argv и в activate:
+# Substitutions in argv and in activate:
 #
-#   {{job}}             путь к файлу задания
-#   {{title}}           заголовок вкладки (уже обрезанный по tab_title_max)
-#   {{command}}         сама команда, как есть
-#   {{command_quoted}}  она же, заэкранированная под шелл этого пресета
+#   {{job}}             path to the job file
+#   {{title}}           tab title (already trimmed to tab_title_max)
+#   {{command}}         the command itself, as is
+#   {{command_quoted}}  the same, escaped for the shell of this preset
 #
-# Автоопределение (когда у кнопки нет terminal и не задан default_terminal)
-# идёт в этом порядке и берёт первый пресет, у которого есть секция под
-# текущую платформу и существует бинарь из argv[0]:
+# Autodetection (when a button has no terminal and default_terminal is not set)
+# goes in this order and takes the first preset that has a section for the
+# current platform and whose argv[0] exists:
 #
 #   crt, wt, iterm, kitty, wezterm, ghostty, alacritty, terminal, gitbash, cmd
 #
-# Явно названный пресет на наличие бинаря не проверяется — терминал мог быть
-# поставлен в нестандартное место.
+# A preset named explicitly is not checked for the binary — the terminal may
+# have been installed in a non-standard place.
 
 terminals:
-  # SecureCRT. Команда доезжает не аргументами, а через файл задания: вкладка
-  # находит его по своему заголовку (/N {{title}}), поэтому задание пишется
-  # всегда, хотя в argv его и нет. Про ручную установку сессии и скрипта —
-  # examples/securecrt/README.md.
+  # SecureCRT. The command arrives not as arguments but through a job file: the
+  # tab finds it by its own title (/N {{title}}), so the job is always written
+  # even though argv does not mention it. About the manual setup of the session
+  # and the script — examples/securecrt/README.md.
   crt:
     job: posix
     darwin:
@@ -69,7 +69,7 @@ terminals:
     linux:
       argv: [/usr/bin/SecureCRT, /T, /N, "{{title}}", /S, crt-lens]
 
-  # Штатный Terminal.app: другого способа открыть вкладку, кроме AppleScript, нет.
+  # The stock Terminal.app: there is no way to open a tab other than AppleScript.
   terminal:
     job: posix
     darwin:
@@ -138,7 +138,7 @@ terminals:
     linux:
       argv: [alacritty, --title, "{{title}}", -e, /bin/bash, "{{job}}"]
 
-  # Windows Terminal: `-w 0` подселяет вкладку в уже открытое окно.
+  # Windows Terminal: `-w 0` puts the tab into an already open window.
   wt:
     job: cmd
     win32:
@@ -154,7 +154,7 @@ terminals:
     win32:
       argv: [powershell.exe, -NoExit, -Command, "& '{{job}}'"]
 
-  # Git Bash — единственный на Windows, кому нужно posix-задание.
+  # Git Bash — the only one on Windows that wants a posix job.
   gitbash:
     win32:
       argv: [C:\Program Files\Git\git-bash.exe, "{{job}}"]

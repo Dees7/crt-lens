@@ -40,7 +40,7 @@ export function loadConfigSafe(): CrtLensConfig | undefined {
   try {
     return loadConfig();
   } catch (error) {
-    console.warn("[crt-lens] не смог прочитать конфиг:", error);
+    console.warn("[crt-lens] could not read the config:", error);
 
     return undefined;
   }
