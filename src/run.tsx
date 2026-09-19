@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { Renderer } from "@freelensapp/extensions";
 
 import { BuiltCommand, withInput } from "./command";
-import { ButtonSpec, CrtLensConfig, InputSpec } from "./config";
+import { ButtonSpec, CrtLensConfig } from "./config";
 import { chooseTerminal, isProblem, openInTerminal } from "./launch/terminals";
 import { OWNER_CHAIN, ownedByAny, pickContainer, pickPod } from "./logs";
 import styles from "./styles.module.css";
@@ -162,19 +162,28 @@ function okButtonOf(node: HTMLElement | null): HTMLElement | null {
  * Тело диалога с запросом строки: подпись, поле и превью того, что запустится.
  *
  * Превью пересобирается на каждое нажатие клавиши — так видно, куда именно
- * подставился ответ. Само значение живёт ещё и в `state`: `ok` у диалога —
- * обычный колбэк, к состоянию компонента ему не дотянуться.
+ * подставился ответ. Пересборкой занимается `submit` снаружи: там же живёт
+ * значение, которое потом запустит `ok` у диалога — обычный колбэк, к состоянию
+ * компонента ему не дотянуться.
+ *
+ * Пропсы здесь — только строки, флаги и функции, и это важно: Freelens кладёт
+ * параметры диалога в `observable.box` с глубоким преобразованием, и любой
+ * простой объект в пропсах приезжает сюда **копией**. Объект, общий с колбэком
+ * `ok`, так не передать: компонент правил бы копию, а запускался бы дефолт.
  */
 function InputDialogBody(props: {
-  config: CrtLensConfig;
-  button: ButtonSpec;
-  spec: InputSpec;
-  built: BuiltCommand;
-  state: { value: string; built: BuiltCommand };
+  name: string;
+  label: string;
+  required: boolean;
+  initial: string;
+  initialPreview: string;
+  /** Принять новое значение и вернуть превью того, что запустится */
+  submit: (value: string) => string;
 }) {
-  const { config, button, spec, built, state } = props;
+  const { name, label, required, initial, initialPreview, submit } = props;
   const { Input } = components();
-  const [value, setValue] = useState(state.value);
+  const [value, setValue] = useState(initial);
+  const [preview, setPreview] = useState(initialPreview);
   const box = useRef<HTMLDivElement | null>(null);
 
   // ConfirmDialog puts autoFocus on its own Run button, and it takes the focus
@@ -186,21 +195,20 @@ function InputDialogBody(props: {
   }, []);
 
   const change = (next: string) => {
-    state.value = next;
-    state.built = withInput(config, button, built, next);
     setValue(next);
+    setPreview(submit(next));
   };
 
-  const empty = spec.required && state.value.trim() === "";
+  const empty = required && value.trim() === "";
 
   return (
     <div className={styles.dialog} ref={box}>
       <p>
-        Run <b>{button.name}</b>?
+        Run <b>{name}</b>?
       </p>
-      <p className={styles.hint}>{spec.label || "Input"}</p>
+      <p className={styles.hint}>{label}</p>
       <Input value={value} onChange={change} onSubmit={() => okButtonOf(box.current)?.click()} />
-      <p className={styles.preview}>{confirmText(button, state.built)}</p>
+      <p className={styles.preview}>{preview}</p>
       {empty && <p className={styles.error}>a non-empty answer is required</p>}
     </div>
   );
@@ -250,16 +258,25 @@ export function runButton(
     const spec = button.input;
     const initial = renderTemplate(spec.default, built.vars);
     const state = { value: initial, built: withInput(config, button, built, initial) };
+    // единственный мостик между полем и `ok`: функция доезжает до компонента как
+    // есть и правит тот самый `state`, который потом запустится
+    const submit = (value: string): string => {
+      state.value = value;
+      state.built = withInput(config, button, built, value);
+
+      return confirmText(button, state.built);
+    };
 
     components().ConfirmDialog.open({
       labelOk: "Run",
       message: (
         <InputDialogBody
-          config={config}
-          button={button}
-          spec={spec}
-          built={built}
-          state={state}
+          name={button.name}
+          label={spec.label || "Input"}
+          required={spec.required}
+          initial={initial}
+          initialPreview={confirmText(button, state.built)}
+          submit={submit}
         />
       ),
       ok: () => {
