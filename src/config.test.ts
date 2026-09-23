@@ -46,11 +46,18 @@ check("пример разбирается и не даёт замечаний",
   assert.deepStrictEqual(validateConfig(raw), []);
 });
 
-check("в примере есть шелл, логи внешние и в доке, дашборд, debug и логи с фильтром", () => {
+check("в примере есть шелл, логи внешние и в доке, дашборд, ВМ под нодой, debug и логи с фильтром", () => {
   assert.deepStrictEqual(
     config.buttons.map((item) => item.id),
-    ["shell", "logs", "dock-logs", "mon", "debug", "wl-logs"],
+    ["shell", "logs", "dock-logs", "mon", "gce-vm", "gke-node-logs", "debug", "wl-logs"],
   );
+});
+
+check("ВМ под нодой GKE: проект, зона и имя берутся из providerID, а не из vars", () => {
+  const vm = button("gce-vm");
+
+  assert.deepStrictEqual(vm.scopes, ["nodes"]);
+  assert.ok(vm.url?.includes("zones/{{provider_2}}/instances/{{provider_3}}?project={{provider_1}}"));
 });
 
 check("кнопка логов воркоада спрашивает фильтр и дописывает его в команду", () => {

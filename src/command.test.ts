@@ -5,7 +5,7 @@
 import * as assert from "assert";
 import { test as check } from "vitest";
 
-import { buildButtonCommand, isRunnable, withInput } from "./command";
+import { buildButtonCommand, instanceId, isRunnable, providerVars, withInput } from "./command";
 import { CrtLensConfig, DEFAULT_CONFIG, normalizeButton, normalizeConfig, VarsEntry } from "./config";
 import { pickButtons, resolveVars, Target } from "./match";
 import { parseScope } from "./scopes";
@@ -30,6 +30,46 @@ function withConfig(over: Partial<CrtLensConfig>): CrtLensConfig {
 function build(config: CrtLensConfig, target: Target, scope = "containers") {
   return buildButtonCommand(config, config.buttons[0], parseScope(scope)!, target, "/kubeconfig");
 }
+
+// ── нода: id машины ──────────────────────────────────────────────────────────
+
+check("instance_id — последний сегмент providerID без схемы", () => {
+  assert.strictEqual(instanceId("yandex://a7lcabeskdjtm9713us6"), "a7lcabeskdjtm9713us6");
+  assert.strictEqual(instanceId("aws:///eu-west-1a/i-0abc"), "i-0abc");
+  assert.strictEqual(instanceId("gce://proj/europe-west1-b/node-1"), "node-1");
+  assert.strictEqual(instanceId(undefined), "");
+  assert.strictEqual(instanceId(""), "");
+});
+
+check("сегменты providerID: GCE отдаёт project, zone и имя", () => {
+  const vars = providerVars("gce://acme-prod/europe-west1-b/gke-main-pool-1a2b");
+
+  assert.strictEqual(vars.provider_path, "acme-prod/europe-west1-b/gke-main-pool-1a2b");
+  assert.strictEqual(vars.provider_1, "acme-prod");
+  assert.strictEqual(vars.provider_2, "europe-west1-b");
+  assert.strictEqual(vars.provider_3, "gke-main-pool-1a2b");
+  assert.strictEqual(vars.provider_4, "");
+  assert.strictEqual(vars.instance_id, "gke-main-pool-1a2b");
+});
+
+check("без providerID все переменные машины пустые, но есть", () => {
+  const vars = providerVars(undefined);
+
+  assert.strictEqual(vars.provider_id, "");
+  assert.strictEqual(vars.provider_path, "");
+  assert.strictEqual(vars.provider_1, "");
+  assert.strictEqual(vars.provider_9, "");
+  assert.strictEqual(vars.instance_id, "");
+});
+
+check("ссылка на ноду собирается из providerID", () => {
+  const config = normalizeConfig({
+    buttons: [{ id: "c", type: "url", scopes: ["nodes"], url: "https://c/nodes/{{instance_id}}?p={{provider_id}}" }],
+  });
+  const target: Target = { context: CONTEXT, node: "n1", name: "n1", kind: "Node", providerId: "yandex://a7l" };
+
+  assert.strictEqual(build(config, target, "nodes").url, "https://c/nodes/a7l?p=yandex://a7l");
+});
 
 // ── переменные ───────────────────────────────────────────────────────────────
 

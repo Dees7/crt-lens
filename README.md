@@ -386,6 +386,45 @@ preferences preview and in devtools.
     url: '{{dash_base}}/d/{{dash_id}}?var-cluster={{dash_cluster}}&var-namespace={{namespace}}&var-pod={{pod}}&from=now-1d&to=now'
 ```
 
+### Example: the cloud machine behind a node
+
+A cloud console addresses a node by its machine, not by the Kubernetes node name. The machine is
+in the node's `spec.providerID`, which the cloud controller (or kubelet's `--provider-id`) fills in
+as `<scheme>://<path>`. Buttons with the `nodes` scope get it split up:
+
+| Variable | Meaning | GCE: `gce://acme-prod/europe-west1-b/gke-main-pool-1a2b` |
+|---|---|---|
+| `provider_id` | the value as is | `gce://acme-prod/europe-west1-b/gke-main-pool-1a2b` |
+| `provider_path` | the path without the scheme | `acme-prod/europe-west1-b/gke-main-pool-1a2b` |
+| `provider_1` … `provider_9` | path segments, counted from 1 | `acme-prod`, `europe-west1-b`, `gke-main-pool-1a2b` |
+| `instance_id` | the last segment | `gke-main-pool-1a2b` |
+
+What the segments are depends on the provider:
+
+| Provider | `spec.providerID` | What the segments hold |
+|---|---|---|
+| GCE / GKE | `gce://<project>/<zone>/<vm name>` | project, zone, VM name |
+| AWS / EKS | `aws:///<zone>/<instance id>` | zone, instance id |
+| Azure / AKS | `azure:///subscriptions/<id>/resourceGroups/<group>/providers/Microsoft.Compute/…` | the ARM resource id; the portal takes all of it (`provider_path`), and `instance_id` of a scale-set node is just its index |
+| Yandex Cloud | `yandex://<instance id>` | instance id |
+| kind, k3s | `kind://docker/<cluster>/<node>`, `k3s://<node>` | no cloud machine — nothing to link to |
+| bare metal without a cloud controller | empty | nothing |
+
+A GCE VM, with nothing taken from `vars` — the project and zone come from the node itself:
+
+```yaml
+  - id: gce-vm
+    name: GCE VM
+    type: url
+    icon: cloud
+    scopes: [nodes]
+    url: 'https://console.cloud.google.com/compute/instancesDetail/zones/{{provider_2}}/instances/{{provider_3}}?project={{provider_1}}'
+```
+
+Put a `context` mask on such a button (`context: 'gke_*'` — GKE names its contexts
+`gke_<project>_<location>_<cluster>`), otherwise it shows up on nodes of every cluster. A node
+without `providerID` gets empty values, and the link comes out broken rather than missing.
+
 ### Logs in the dock: `type: logs`
 
 Opens the native Freelens log viewer — the same tab the pod's Logs button gives you, with its
@@ -461,8 +500,9 @@ literal part of the masks → order in the file.
 Substitutions (case-insensitive): `kubectl`, `kubeconfig`, `context`, `namespace`, `pod`,
 `container`, `node`, `name`, `kind`, `api_version`, `button`, `platform`, `node_namespace`,
 `node_pod`, `image`, `shell`, `shell_quoted`, `overrides`, `kube_version`, `kube_minor`, `from`,
-`to`, `query`, `query_encoded`, `input`, `userinput`, `input_quoted` — plus everything coming from
-`vars`.
+`to`, `query`, `query_encoded`, `input`, `userinput`, `input_quoted`; on nodes also `provider_id`,
+`provider_path`, `provider_1` … `provider_9`, `instance_id` (see [the cloud machine behind a
+node](#example-the-cloud-machine-behind-a-node)) — plus everything coming from `vars`.
 
 `shell_quoted` and `overrides` are already escaped for the shell the command will run in (`sh` or
 `cmd.exe`) — do not wrap them in quotes yourself. Target names (`pod`, `context`, …) cannot be
