@@ -161,8 +161,9 @@ default_terminal: ''     # пусто — автоопределение по н
 Подстановки (регистр не важен): `kubectl`, `kubeconfig`, `context`, `namespace`, `pod`,
 `container`, `node`, `name`, `kind`, `api_version`, `button`, `platform`, `node_namespace`,
 `node_pod`, `image`, `shell`, `shell_quoted`, `overrides`, `kube_version`, `kube_minor`,
-`from`, `to`, `query`, `query_encoded`, `input`, `userinput`, `input_quoted` — плюс всё, что
-пришло из `vars`.
+`from`, `to`, `query`, `query_encoded`, `input`, `userinput`, `input_quoted`; на нодах ещё
+`provider_id`, `provider_path`, `provider_1` … `provider_9`, `instance_id` (см. [облачная
+машина под нодой](#пример-облачная-машина-под-нодой)) — плюс всё, что пришло из `vars`.
 
 `shell_quoted` и `overrides` уже экранированы под тот шелл, в котором команда выполнится
 (`sh` или `cmd.exe`) — в кавычки их брать не надо. Именами цели (`pod`, `context`, …) через
@@ -272,6 +273,45 @@ buttons:
 Селектор логов по ноде идёт по метке `meta.k8s.node`. Пункт на поде при этом открывает логи
 пода целиком (scope `pods`), а подменю — логи выбранного контейнера: за это отвечает правило
 с маской `container: '*'`.
+
+### Пример: облачная машина под нодой
+
+Облачная консоль адресует ноду машиной, а не именем ноды в кубере. Машина записана в
+`spec.providerID` ноды: его заполняет облачный контроллер (или kubelet с `--provider-id`) в виде
+`<схема>://<путь>`. Кнопкам со scope `nodes` он приходит уже разобранным:
+
+| Переменная | Что это | GCE: `gce://acme-prod/europe-west1-b/gke-main-pool-1a2b` |
+|---|---|---|
+| `provider_id` | значение как есть | `gce://acme-prod/europe-west1-b/gke-main-pool-1a2b` |
+| `provider_path` | путь без схемы | `acme-prod/europe-west1-b/gke-main-pool-1a2b` |
+| `provider_1` … `provider_9` | сегменты пути, счёт с 1 | `acme-prod`, `europe-west1-b`, `gke-main-pool-1a2b` |
+| `instance_id` | последний сегмент | `gke-main-pool-1a2b` |
+
+Что лежит в сегментах, зависит от провайдера:
+
+| Провайдер | `spec.providerID` | Что в сегментах |
+|---|---|---|
+| GCE / GKE | `gce://<project>/<zone>/<имя ВМ>` | проект, зона, имя ВМ |
+| AWS / EKS | `aws:///<zone>/<instance id>` | зона, id инстанса |
+| Azure / AKS | `azure:///subscriptions/<id>/resourceGroups/<группа>/providers/Microsoft.Compute/…` | ARM-id ресурса; портал принимает его целиком (`provider_path`), а `instance_id` у ноды из scale set — просто её номер |
+| Yandex Cloud | `yandex://<instance id>` | id инстанса |
+| kind, k3s | `kind://docker/<кластер>/<нода>`, `k3s://<нода>` | облачной машины нет — ссылаться некуда |
+| железо без облачного контроллера | пусто | ничего |
+
+ВМ в GCE — без единой записи в `vars`, проект и зона берутся из самой ноды:
+
+```yaml
+  - id: gce-vm
+    name: GCE VM
+    type: url
+    icon: cloud
+    scopes: [nodes]
+    url: 'https://console.cloud.google.com/compute/instancesDetail/zones/{{provider_2}}/instances/{{provider_3}}?project={{provider_1}}'
+```
+
+Такой кнопке стоит поставить маску `context` (`context: 'gke_*'` — GKE называет контексты
+`gke_<project>_<location>_<cluster>`), иначе она появится на нодах любого кластера. Нода без
+`providerID` получит пустые значения, и ссылка выйдет битой, а не пропадёт.
 
 ## Логи в доке: `type: logs`
 

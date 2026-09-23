@@ -88,7 +88,9 @@ export function targetsFor(
   };
 
   if (object.kind === "Node") {
-    return { containers: [], object: { ...base, node: name } };
+    const providerId = (object as KubeObject & { spec?: { providerID?: string } }).spec?.providerID;
+
+    return { containers: [], object: { ...base, node: name, providerId } };
   }
 
   if (object.kind === "Namespace") {

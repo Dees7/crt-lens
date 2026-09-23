@@ -240,6 +240,7 @@ export function buildButtonCommand(
     name: target.name ?? "",
     kind: target.kind ?? scope.kind,
     api_version: target.apiVersion ?? "",
+    ...providerVars(target.providerId),
     button: button.id,
     platform: process.platform,
     node_namespace: config.node_namespace,
@@ -276,6 +277,51 @@ export function buildButtonCommand(
     queryRule: query,
     ...(problem ? { problem } : {}),
   };
+}
+
+/**
+ * Путь `spec.providerID` ноды без схемы, по сегментам:
+ * `gce://proj/europe-west1-b/node-1` → `["proj", "europe-west1-b", "node-1"]`,
+ * `aws:///eu-west-1a/i-0ab…` → `["eu-west-1a", "i-0ab…"]`.
+ */
+function providerSegments(providerId: string | undefined): string[] {
+  if (!providerId) return [];
+
+  return providerId
+    .replace(/^[a-z][\w+.-]*:\/\//i, "")
+    .split("/")
+    .filter((part) => part !== "");
+}
+
+/**
+ * Id машины — последний сегмент пути: `yandex://a7l…` → `a7l…`,
+ * `aws:///eu-west-1a/i-0ab…` → `i-0ab…`. Облачные консоли адресуют ноду им,
+ * а не именем из кубера.
+ */
+export function instanceId(providerId: string | undefined): string {
+  return providerSegments(providerId).pop() ?? "";
+}
+
+/**
+ * Всё, что шаблон знает про машину под нодой: `provider_id` как есть,
+ * `provider_path` без схемы, `provider_1`, `provider_2`, … по сегментам и
+ * `instance_id`. Сегментов у провайдеров разное число, поэтому номера, которых
+ * нет, отдаются пустыми до `provider_9`: ссылка без них не останется с
+ * неподставленным `{{provider_4}}`.
+ */
+export function providerVars(providerId: string | undefined): Record<string, string> {
+  const segments = providerSegments(providerId);
+  const vars: Record<string, string> = {
+    provider_id: providerId ?? "",
+    provider_path: segments.join("/"),
+    instance_id: segments[segments.length - 1] ?? "",
+  };
+
+  for (let index = 0; index < Math.max(9, segments.length); index += 1) {
+    vars[`provider_${index + 1}`] = segments[index] ?? "";
+  }
+
+  return vars;
 }
 
 /**

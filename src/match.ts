@@ -17,6 +17,8 @@ export interface Target {
   name?: string;
   kind?: string;
   apiVersion?: string;
+  /** `spec.providerID` ноды: `yandex://<id>`, `aws:///<zone>/<id>`; у прочих kind нет */
+  providerId?: string;
   /** Версия сервера кластера, как её отдал Lens: `v1.33.3` */
   kubeVersion?: string;
   /**

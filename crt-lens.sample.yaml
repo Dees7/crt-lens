@@ -53,8 +53,10 @@
 # Substitutions (case-insensitive): kubectl, kubeconfig, context, namespace,
 # pod, container, node, name, kind, api_version, button, node_namespace,
 # node_pod, image, shell, shell_quoted, overrides, platform, from, to,
-# query, query_encoded plus everything from vars. shell_quoted and overrides
-# are already escaped for the shell — do not put them in quotes.
+# query, query_encoded plus everything from vars. On nodes also provider_id,
+# provider_path, provider_1 … provider_9 and instance_id — the node's
+# spec.providerID, split up (see the gce-vm button below). shell_quoted and
+# overrides are already escaped for the shell — do not put them in quotes.
 
 kubectl_path: kubectl
 
@@ -163,6 +165,37 @@ buttons:
     include_stopped: true
     confirm: false
     url: "{{dash_base}}/d/{{dash_id}}?var-cluster={{dash_cluster}}&var-namespace={{namespace}}&var-pod={{pod}}&from=now-1d&to=now"
+    rules: []
+
+  # The cloud machine behind a node, in the Google Cloud console. A node's
+  # spec.providerID on GKE is gce://<project>/<zone>/<vm name>, and the button
+  # gets it split into provider_1, provider_2, provider_3 — so the link needs
+  # nothing from vars. The context mask keeps it off non-GKE clusters: GKE names
+  # its contexts gke_<project>_<location>_<cluster>.
+  - id: gce-vm
+    name: GCE VM
+    type: url
+    icon: cloud
+    context: "gke_*"
+    scopes: [nodes]
+    column: false
+    confirm: false
+    url: "https://console.cloud.google.com/compute/instancesDetail/zones/{{provider_2}}/instances/{{provider_3}}?project={{provider_1}}"
+    rules: []
+
+  # The node's logs in the Google Cloud Logs Explorer: the project comes from
+  # spec.providerID again, the selector from query — it reaches the link
+  # url-encoded as query_encoded.
+  - id: gke-node-logs
+    name: GKE node logs
+    type: url
+    icon: "svg:chart"
+    context: "gke_*"
+    scopes: [nodes]
+    column: false
+    confirm: false
+    query: 'resource.type="k8s_node" resource.labels.node_name="{{node}}"'
+    url: "https://console.cloud.google.com/logs/query;query={{query_encoded}}?project={{provider_1}}"
     rules: []
 
   # kubectl debug: an ephemeral container with network tools next to the target one.
